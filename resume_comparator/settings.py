@@ -131,7 +131,7 @@ import os
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
-    DEBUG = True
+    DEBUG = False
     
     # Secure the key via env
     SECRET_KEY = os.environ.get('SECRET_KEY', SECRET_KEY)
@@ -151,8 +151,11 @@ if RENDER_EXTERNAL_HOSTNAME:
     }
     MEDIA_ROOT = PERSISTENT_DIR / 'media'
 
-# Serve static files with WhiteNoise compression
+# Serve static files with WhiteNoise compression & handle default storage
 STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
     },
