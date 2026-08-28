@@ -1,0 +1,151 @@
+{% extends 'comparator/base.html' %}
+
+{% block title %}Compare Resume - Resume Comparator{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-7">
+        <div class="card shadow border-0 rounded-4">
+            <div class="card-header bg-primary text-white text-center py-4 rounded-top-4">
+                <h3 class="mb-1"><i class="fa-solid fa-wand-magic-sparkles me-2"></i>Analyze & Match Resume</h3>
+                <p class="mb-0 text-white-50">Compare resume profile with job posting requirements using NLP and Cosine Similarity</p>
+            </div>
+            
+            <div class="card-body p-4 p-md-5">
+                <form id="compareForm" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Job Title -->
+                    <div class="mb-4">
+                        <label for="{{ form.job_title.id_for_label }}" class="form-label fw-bold">
+                            <i class="fa-solid fa-briefcase text-primary me-2"></i>{{ form.job_title.label }}
+                        </label>
+                        {{ form.job_title }}
+                        {% if form.job_title.errors %}
+                            <div class="text-danger small mt-1">{{ form.job_title.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Job Role / Description -->
+                    <div class="mb-4">
+                        <label for="{{ form.job_role.id_for_label }}" class="form-label fw-bold">
+                            <i class="fa-solid fa-circle-info text-primary me-2"></i>{{ form.job_role.label }}
+                        </label>
+                        {{ form.job_role }}
+                        {% if form.job_role.errors %}
+                            <div class="text-danger small mt-1">{{ form.job_role.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Required Skills -->
+                    <div class="mb-4">
+                        <label for="{{ form.skills_required.id_for_label }}" class="form-label fw-bold">
+                            <i class="fa-solid fa-tags text-primary me-2"></i>{{ form.skills_required.label }}
+                        </label>
+                        {{ form.skills_required }}
+                        <div class="form-text">{{ form.skills_required.help_text }}</div>
+                        {% if form.skills_required.errors %}
+                            <div class="text-danger small mt-1">{{ form.skills_required.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Required Experience -->
+                    <div class="mb-4">
+                        <label for="{{ form.experience_required.id_for_label }}" class="form-label fw-bold">
+                            <i class="fa-solid fa-star text-primary me-2"></i>{{ form.experience_required.label }}
+                        </label>
+                        {{ form.experience_required }}
+                        {% if form.experience_required.errors %}
+                            <div class="text-danger small mt-1">{{ form.experience_required.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Resume File -->
+                    <div class="mb-5">
+                        <label for="{{ form.resume_file.id_for_label }}" class="form-label fw-bold">
+                            <i class="fa-solid fa-file-pdf text-danger me-2"></i>{{ form.resume_file.label }}
+                        </label>
+                        {{ form.resume_file }}
+                        {% if form.resume_file.errors %}
+                            <div class="text-danger small mt-1">{{ form.resume_file.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Submit button -->
+                    <button type="submit" class="btn btn-primary w-100 py-3 rounded-3 fw-bold shadow-sm" id="submitBtn">
+                        <i class="fa-solid fa-magnifying-glass-chart me-2"></i>Start Match Analysis
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Full Screen Loader Overlay -->
+<div id="loaderOverlay" class="loader-overlay d-none">
+    <div class="loader-content text-center" style="width: 80%; max-width: 500px; margin: 0 auto;">
+        <h4 class="text-white mb-3 fw-semibold text-cyan animate-pulse">Initializing Neural Matcher...</h4>
+        <div class="progress bg-dark mb-3" style="height: 12px; border: 1px solid var(--border-cyan); border-radius: 4px; overflow: hidden;">
+            <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-info" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+        <p id="progressStatus" class="text-light-50 small">[ STEP 1/5 ] // Loading PDF text stream...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const form = document.getElementById("compareForm");
+        const loader = document.getElementById("loaderOverlay");
+        const submitBtn = document.getElementById("submitBtn");
+
+        form.addEventListener("submit", function() {
+            // Show overlay loader
+            loader.classList.remove("d-none");
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Comparing...';
+
+            const progressBar = document.getElementById("progressBar");
+            const progressStatus = document.getElementById("progressStatus");
+            let progress = 0;
+
+            const stages = [
+                { limit: 25, interval: 60, text: "[ STEP 1/5 ] // Parsing PDF text data..." },
+                { limit: 55, interval: 100, text: "[ STEP 2/5 ] // Mapping Transformer embeddings..." },
+                { limit: 75, interval: 150, text: "[ STEP 3/5 ] // Analyzing candidate project details..." },
+                { limit: 90, interval: 200, text: "[ STEP 4/5 ] // Checking academic credentials..." },
+                { limit: 98, interval: 400, text: "[ STEP 5/5 ] // Completing comparison profile..." }
+            ];
+
+            let stageIdx = 0;
+
+            function runProgress() {
+                if (stageIdx >= stages.length) return;
+                const currentStage = stages[stageIdx];
+                
+                if (progress < currentStage.limit) {
+                    progress += 1;
+                    progressBar.style.width = progress + "%";
+                    progressBar.setAttribute("aria-valuenow", progress);
+                    progressStatus.innerText = currentStage.text;
+                    setTimeout(runProgress, currentStage.interval);
+                } else {
+                    stageIdx++;
+                    setTimeout(runProgress, 50);
+                }
+            }
+
+            runProgress();
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,424 @@
+{% extends 'comparator/base.html' %}
+
+{% block title %}Analysis Results - {{ submission.candidate_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .score-circle {
+        position: relative;
+        width: 140px;
+        height: 140px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.2rem;
+        font-weight: 800;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        margin: 0 auto;
+    }
+    
+    .score-high {
+        background: radial-gradient(circle, #d4edda 60%, #c3e6cb);
+        color: #155724;
+        border: 4px solid #28a745;
+    }
+    
+    .score-medium {
+        background: radial-gradient(circle, #fff3cd 60%, #ffeeba);
+        color: #856404;
+        border: 4px solid #ffc107;
+    }
+    
+    .score-low {
+        background: radial-gradient(circle, #f8d7da 60%, #f5c6cb);
+        color: #721c24;
+        border: 4px solid #dc3545;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Header Summary Card -->
+    <div class="col-12 mb-4">
+        <div class="card shadow border-0 rounded-4">
+            <div class="card-body p-4 p-md-5">
+                <div class="row align-items-center">
+                    <div class="col-lg-8">
+                        <span class="badge bg-secondary mb-2 px-3 py-2 fs-7 rounded-pill">
+                            <i class="fa-solid fa-clock-rotate-left me-1"></i> Analyzed on {{ submission.processed_at|date:"M d, Y H:i" }}
+                        </span>
+                        <h1 class="fw-bold text-white mb-1">{{ submission.candidate_name }}</h1>
+                        <h4 class="text-cyan-dim mb-3">Job Target: <span class="text-cyan">{{ job.job_title }}</span></h4>
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <span class="badge bg-secondary-subtle text-light border border-secondary px-3 py-2"><i class="fa-solid fa-briefcase text-cyan me-2"></i>Req. Exp: {{ job.experience_required }} Years</span>
+                            <span class="badge bg-secondary-subtle text-light border border-secondary px-3 py-2"><i class="fa-solid fa-file-pdf text-danger me-2"></i>File: {{ submission.resume_file.name|cut:"resumes/" }}</span>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 text-center mt-4 mt-lg-0">
+                        <div class="score-circle {% if submission.match_score >= 80 %}score-high{% elif submission.match_score >= 50 %}score-medium{% else %}score-low{% endif %}">
+                            {{ submission.match_score|floatformat:1 }}%
+                        </div>
+                        <p class="mt-2 mb-0 fw-bold text-secondary">Overall Match Score</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts & Category Score Row -->
+    <div class="col-lg-5 mb-4">
+        <div class="card shadow border-0 rounded-4 h-100">
+            <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+                <h5 class="fw-bold text-white mb-0"><i class="fa-solid fa-chart-radar text-cyan me-2"></i>Category Profile</h5>
+            </div>
+            <div class="card-body px-4 py-4 text-center">
+                <div style="position: relative; width: 100%; max-width: 350px; margin: 0 auto;">
+                    <canvas id="categoryChart" 
+                            data-skills="{{ submission.skills_match_score }}" 
+                            data-experience="{{ submission.experience_score }}" 
+                            data-projects="{{ submission.project_score }}" 
+                            data-education="{{ submission.education_score }}"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7 mb-4">
+        <div class="card shadow border-0 rounded-4 h-100">
+            <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+                <h5 class="fw-bold text-white mb-0"><i class="fa-solid fa-list-check text-pink me-2"></i>Match Breakdown</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="list-group list-group-flush">
+                    <!-- Skills match list -->
+                    <div class="list-group-item border-0 py-3 d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="fw-bold mb-1"><i class="fa-solid fa-tags text-cyan me-2"></i>Skills Matching</h6>
+                            <small class="text-muted">Keyword overlap and context similarity</small>
+                        </div>
+                        <span class="badge {% if submission.skills_match_score >= 80 %}bg-success{% elif submission.skills_match_score >= 50 %}bg-warning{% else %}bg-danger{% endif %} rounded-pill px-3 py-2 fs-6">
+                            {{ submission.skills_match_score|floatformat:1 }}%
+                        </span>
+                    </div>
+                    <!-- Experience list -->
+                    <div class="list-group-item border-0 py-3 d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="fw-bold mb-1"><i class="fa-solid fa-briefcase text-cyan me-2"></i>Experience Understanding</h6>
+                            <small class="text-muted">Duration and role match comparison</small>
+                        </div>
+                        <span class="badge {% if submission.experience_score >= 80 %}bg-success{% elif submission.experience_score >= 50 %}bg-warning{% else %}bg-danger{% endif %} rounded-pill px-3 py-2 fs-6">
+                            {{ submission.experience_score|floatformat:1 }}%
+                        </span>
+                    </div>
+                    <!-- Projects list -->
+                    <div class="list-group-item border-0 py-3 d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="fw-bold mb-1"><i class="fa-solid fa-diagram-project text-cyan me-2"></i>Project Analysis</h6>
+                            <small class="text-muted">Relevance of project portfolio</small>
+                        </div>
+                        <span class="badge {% if submission.project_score >= 80 %}bg-success{% elif submission.project_score >= 50 %}bg-warning{% else %}bg-danger{% endif %} rounded-pill px-3 py-2 fs-6">
+                            {{ submission.project_score|floatformat:1 }}%
+                        </span>
+                    </div>
+                    <!-- Education list -->
+                    <div class="list-group-item border-0 py-3 d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="fw-bold mb-1"><i class="fa-solid fa-graduation-cap text-cyan me-2"></i>Education Verification</h6>
+                            <small class="text-muted">Credentials and degree alignment</small>
+                        </div>
+                        <span class="badge {% if submission.education_score >= 80 %}bg-success{% elif submission.education_score >= 50 %}bg-warning{% else %}bg-danger{% endif %} rounded-pill px-3 py-2 fs-6">
+                            {{ submission.education_score|floatformat:1 }}%
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Deep Dives (Accordions) -->
+    <div class="col-12 mt-2">
+        <h4 class="fw-bold text-white mb-3"><i class="fa-solid fa-folder-open text-cyan me-2"></i>Detailed Category Insights</h4>
+        
+        <div class="accordion shadow border-0 rounded-4 overflow-hidden" id="insightsAccordion">
+            
+            <!-- Skills insights -->
+            <div class="accordion-item border-0 border-bottom">
+                <h2 class="accordion-header">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSkills" aria-expanded="true">
+                        <i class="fa-solid fa-tags text-cyan me-2"></i><strong>Resume Skills Matching Details</strong>
+                    </button>
+                </h2>
+                <div id="collapseSkills" class="accordion-collapse collapse show" data-bs-parent="#insightsAccordion">
+                    <div class="accordion-body bg-white p-4">
+                        <div class="row">
+                            <div class="col-md-6 mb-3 mb-md-0">
+                                <h6 class="fw-bold text-success"><i class="fa-solid fa-circle-check me-2"></i>Matched Skills ({{ matched_skills|length }})</h6>
+                                <div class="d-flex flex-wrap gap-2 mt-2">
+                                    {% for skill in matched_skills %}
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 fs-7">{{ skill }}</span>
+                                    {% empty %}
+                                        <span class="text-muted small">No direct skill matches found.</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="fw-bold text-danger"><i class="fa-solid fa-circle-xmark me-2"></i>Missing Skills ({{ missing_skills|length }})</h6>
+                                <div class="d-flex flex-wrap gap-2 mt-2">
+                                    {% for skill in missing_skills %}
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 fs-7">{{ skill }}</span>
+                                    {% empty %}
+                                        <span class="text-muted small text-success"><i class="fa-solid fa-circle-check me-1"></i>All requested skills matched!</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        <hr class="my-4">
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <h3 class="fw-bold text-white">{{ skills_keyword_percentage|floatformat:1 }}%</h3>
+                                <p class="text-muted small mb-0">Required Keyword Matches</p>
+                            </div>
+                            <div class="col-6">
+                                <h3 class="fw-bold text-white">{{ skills_similarity|floatformat:1 }}%</h3>
+                                <p class="text-muted small mb-0">Context Similarity (embeddings Cosine)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Experience insights -->
+            <div class="accordion-item border-0 border-bottom">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExp">
+                        <i class="fa-solid fa-briefcase text-cyan me-2"></i><strong>Experience Understanding Details</strong>
+                    </button>
+                </h2>
+                <div id="collapseExp" class="accordion-collapse collapse" data-bs-parent="#insightsAccordion">
+                    <div class="accordion-body bg-white p-4">
+                        <div class="row align-items-center">
+                            <div class="col-md-7">
+                                <table class="table table-borderless">
+                                    <tbody>
+                                        <tr>
+                                            <td class="fw-bold text-muted" style="width: 200px;">Required Experience:</td>
+                                            <td class="fw-bold">{{ exp_required }} Years</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold text-muted">Detected Experience:</td>
+                                            <td class="fw-bold">{{ exp_found|floatformat:1 }} Years</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold text-muted">Title Role Fit:</td>
+                                            <td>
+                                                <span class="badge {% if role_fit == 'High' %}bg-success{% elif role_fit == 'Medium' %}bg-warning{% else %}bg-danger{% endif %}">
+                                                    {{ role_fit }} Match
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="col-md-5 text-center mt-3 mt-md-0">
+                                {% if exp_meets %}
+                                    <div class="alert alert-success d-inline-block">
+                                        <h5 class="alert-heading mb-1"><i class="fa-solid fa-square-check me-2"></i>Meets Requirement</h5>
+                                        <p class="mb-0 small">Candidate meets or exceeds experience requirements.</p>
+                                    </div>
+                                {% else %}
+                                    <div class="alert alert-warning d-inline-block">
+                                        <h5 class="alert-heading mb-1"><i class="fa-solid fa-triangle-exclamation me-2"></i>Below Requirement</h5>
+                                        <p class="mb-0 small">Candidate has less experience than requested.</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Projects insights -->
+            <div class="accordion-item border-0 border-bottom">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseProj">
+                        <i class="fa-solid fa-diagram-project text-cyan me-2"></i><strong>Project Portfolio Analysis</strong>
+                    </button>
+                </h2>
+                <div id="collapseProj" class="accordion-collapse collapse" data-bs-parent="#insightsAccordion">
+                    <div class="accordion-body bg-white p-4">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h6 class="fw-bold text-white mb-2">Parsed Project Description Block</h6>
+                                {% if project_section_found %}
+                                    <div class="bg-light p-3 rounded border text-light small" style="white-space: pre-line; max-height: 250px; overflow-y: auto;">
+                                        {{ project_snippet }}
+                                    </div>
+                                {% else %}
+                                    <div class="alert alert-light border text-muted">
+                                        <i class="fa-solid fa-circle-exclamation me-2"></i>No explicit "Projects" header section was isolated in the resume. 
+                                        A fallback project verb heuristic was applied.
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 text-center mt-3 mt-md-0 border-start-md">
+                                <div class="p-3 bg-light rounded h-100 d-flex flex-column justify-content-center">
+                                    <h2 class="fw-bold text-cyan mb-1">{{ project_relevance|floatformat:1 }}%</h2>
+                                    <p class="text-muted small mb-0">Project Context Relevance to Job Role</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Education insights -->
+            <div class="accordion-item border-0">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEdu">
+                        <i class="fa-solid fa-graduation-cap text-cyan me-2"></i><strong>Education Checking Details</strong>
+                    </button>
+                </h2>
+                <div id="collapseEdu" class="accordion-collapse collapse" data-bs-parent="#insightsAccordion">
+                    <div class="accordion-body bg-white p-4">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <table class="table table-borderless">
+                                    <tbody>
+                                        <tr>
+                                            <td class="fw-bold text-muted" style="width: 200px;">Required Education:</td>
+                                            <td class="fw-bold">{{ required_edu }} Degree</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold text-muted">Detected Degrees:</td>
+                                            <td>
+                                                {% for degree in detected_degrees %}
+                                                    <span class="badge bg-secondary px-2 py-1 me-1">{{ degree }}</span>
+                                                {% endfor %}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold text-muted">Verification Status:</td>
+                                            <td class="fw-bold text-primary">{{ edu_match_status }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="col-md-4 text-center">
+                                <i class="fa-solid fa-user-graduate text-muted opacity-25" style="font-size: 5rem;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Back Button -->
+    <div class="col-12 text-center mt-5">
+        <a href="{% url 'comparator:compare_form' %}" class="btn btn-outline-primary px-5 py-3 rounded-pill fw-bold">
+            <i class="fa-solid fa-arrow-left me-2"></i>Analyze Another Resume
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const canvasEl = document.getElementById('categoryChart');
+        const skillsScore = parseFloat(canvasEl.dataset.skills) || 0;
+        const experienceScore = parseFloat(canvasEl.dataset.experience) || 0;
+        const projectScore = parseFloat(canvasEl.dataset.projects) || 0;
+        const educationScore = parseFloat(canvasEl.dataset.education) || 0;
+
+        const ctx = canvasEl.getContext('2d');
+        
+        const data = {
+            labels: [
+                'Skills Match',
+                'Experience',
+                'Projects',
+                'Education'
+            ],
+            datasets: [{
+                label: 'Candidate Score (%)',
+                data: [
+                    skillsScore,
+                    experienceScore,
+                    projectScore,
+                    educationScore
+                ],
+                fill: true,
+                backgroundColor: 'rgba(0, 240, 255, 0.15)',
+                borderColor: '#00f0ff',
+                pointBackgroundColor: '#00f0ff',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: '#00f0ff'
+            }, {
+                label: 'Perfect Fit Target',
+                data: [100, 100, 100, 100],
+                fill: false,
+                borderColor: '#ff007f',
+                borderDash: [5, 5],
+                pointRadius: 0
+            }]
+        };
+
+        const config = {
+            type: 'radar',
+            data: data,
+            options: {
+                responsive: true,
+                elements: {
+                    line: {
+                        borderWidth: 2
+                    }
+                },
+                scales: {
+                    r: {
+                        grid: {
+                            color: 'rgba(0, 240, 255, 0.15)'
+                        },
+                        angleLines: {
+                            color: 'rgba(255, 0, 127, 0.15)'
+                        },
+                        pointLabels: {
+                            color: '#e2e8f0',
+                            font: {
+                                family: 'Orbitron',
+                                size: 11
+                            }
+                        },
+                        ticks: {
+                            color: '#a0aec0',
+                            backdropColor: 'transparent',
+                            stepSize: 20
+                        },
+                        suggestedMin: 0,
+                        suggestedMax: 100
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            color: '#e2e8f0',
+                            font: {
+                                family: 'Orbitron'
+                            }
+                        }
+                    }
+                }
+            },
+        };
+
+        new Chart(ctx, config);
+    });
+</script>
+{% endblock %}
