@@ -116,6 +116,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Media files (uploaded resumes)
 MEDIA_URL = '/media/'
@@ -123,4 +124,28 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Render Persistent Disk configuration
+import os
+RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+    DEBUG = False
+    
+    # Secure the key via env
+    SECRET_KEY = os.environ.get('SECRET_KEY', SECRET_KEY)
+    
+    # Mount persistent directory
+    PERSISTENT_DIR = Path('/data')
+    if not PERSISTENT_DIR.exists():
+        os.makedirs(PERSISTENT_DIR, exist_ok=True)
+        
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': PERSISTENT_DIR / 'db.sqlite3',
+        }
+    }
+    MEDIA_ROOT = PERSISTENT_DIR / 'media'
+
 
