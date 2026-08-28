@@ -6,5 +6,7 @@ numpy>=1.20.0
 sentence-transformers>=3.0.0
 torch>=2.0.0
 gunicorn>=21.2.0
+whitenoise>=6.0.0
+
 
 
