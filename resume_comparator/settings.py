@@ -135,9 +135,11 @@ if RENDER_EXTERNAL_HOSTNAME:
     # Secure the key via env
     SECRET_KEY = os.environ.get('SECRET_KEY', SECRET_KEY)
     
-    # Mount persistent directory
+    # Mount persistent directory if it exists, otherwise fall back to local project folder
     PERSISTENT_DIR = Path('/data')
     if not PERSISTENT_DIR.exists():
+        # Fall back to a data directory inside the writable project root (for Free Tier)
+        PERSISTENT_DIR = BASE_DIR / 'data'
         os.makedirs(PERSISTENT_DIR, exist_ok=True)
         
     DATABASES = {
