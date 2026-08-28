@@ -12,6 +12,12 @@ def get_embedding_model():
     Using a singleton pattern keeps subsequent request response times under 100ms.
     """
     global _model_instance
+    import os
+    # Render Free Tier RAM is strictly limited to 512MB. 
+    # Bypassing PyTorch prevents the container from crash-looping due to Out Of Memory (OOM) SIGKILLs.
+    if os.environ.get('RENDER_EXTERNAL_HOSTNAME') and not os.environ.get('ENABLE_TRANSFORMERS'):
+        return None
+
     if _model_instance is None:
         try:
             from sentence_transformers import SentenceTransformer

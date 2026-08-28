@@ -7,8 +7,13 @@ class ComparatorConfig(AppConfig):
 
     def ready(self):
         import os
+        # Render Free Tier RAM is strictly limited to 512MB. 
+        # Bypassing PyTorch prevents the container from crash-looping due to Out Of Memory (OOM) SIGKILLs.
+        if os.environ.get('RENDER_EXTERNAL_HOSTNAME') and not os.environ.get('ENABLE_TRANSFORMERS'):
+            print("--- RENDER FREE TIER DETECTED: BYPASSING PYTORCH PRELOAD TO PREVENT OOM ---")
+            return
+
         # Pre-load embedding model on startup in the main thread/process
-        # This keeps the server request processing time near-instant.
         if os.environ.get('RUN_MAIN') == 'true' or 'test' in os.sys.argv or os.environ.get('RENDER_EXTERNAL_HOSTNAME'):
             try:
                 from .utils import get_embedding_model
