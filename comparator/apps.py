@@ -9,7 +9,7 @@ class ComparatorConfig(AppConfig):
         import os
         # Pre-load embedding model on startup in the main thread/process
         # This keeps the server request processing time near-instant.
-        if os.environ.get('RUN_MAIN') == 'true' or 'test' in os.sys.argv:
+        if os.environ.get('RUN_MAIN') == 'true' or 'test' in os.sys.argv or os.environ.get('RENDER_EXTERNAL_HOSTNAME'):
             try:
                 from .utils import get_embedding_model
                 print("--- PRE-LOADING EMBEDDING MODEL START ---")
