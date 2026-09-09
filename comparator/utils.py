@@ -203,41 +203,19 @@ def analyze_resume_against_job(job_title, job_role, skills_list, experience_requ
             
     keyword_match_ratio = len(matched_skills) / len(skills_list) if skills_list else 1.0
     
-    # Context Similarity of resume to job skills + title + role
+    # Clean job profile text for contextual category analysis
     job_profile_text = f"{job_title} {job_role} {' '.join(skills_list)}"
     cleaned_job_profile = clean_text(job_profile_text)
-    
-    cosine_sim = 0.0
-    model_loaded = False
-    
-    try:
-        model = get_embedding_model()
-        if model is not None:
-            # Generate dense embeddings
-            embeddings = model.encode([cleaned_job_profile, cleaned_resume], convert_to_numpy=True)
-            # Compute cosine similarity
-            cosine_sim = cosine_similarity([embeddings[0]], [embeddings[1]])[0][0]
-            model_loaded = True
-    except Exception:
-        pass
         
-    # Fallback to TF-IDF if model failed to load/encode
-    if not model_loaded:
-        try:
-            vectorizer = TfidfVectorizer(stop_words='english')
-            tfidf = vectorizer.fit_transform([cleaned_job_profile, cleaned_resume])
-            cosine_sim = cosine_similarity(tfidf[0:1], tfidf[1:2])[0][0]
-        except Exception:
-            cosine_sim = 0.0
-        
-    # Skills Match Score is 70% keyword overlap + 30% contextual similarity
-    skills_score = (0.7 * keyword_match_ratio + 0.3 * cosine_sim) * 100
+    # Skills Match Score is 100% based on matched skills ratio
+    skills_score = round(keyword_match_ratio * 100, 1)
     skills_score = min(max(skills_score, 0.0), 100.0)
     
     skills_details = {
         "matched_skills": matched_skills,
         "missing_skills": missing_skills,
-        "cosine_similarity": round(float(cosine_sim) * 100, 1),
+        "matched_count": len(matched_skills),
+        "total_required": len(skills_list),
         "keyword_percentage": round(keyword_match_ratio * 100, 1)
     }
     

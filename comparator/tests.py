@@ -74,6 +74,7 @@ class NLPUtilityTests(TestCase):
         self.assertIn("django", results['skills_match_details']['matched_skills'])
         # Docker should be missing
         self.assertIn("docker", results['skills_match_details']['missing_skills'])
+        self.assertEqual(results['skills_match_score'], 75.0)
         # Candidate has 2022-2026 = 4 years, which meets the 3 year requirement
         self.assertTrue(results['experience_details']['meets_requirements'])
 
