@@ -74,6 +74,7 @@ def compare_result_view(request, submission_id):
         # Skills lists
         'matched_skills': submission.skills_match_details.get('matched_skills', []),
         'missing_skills': submission.skills_match_details.get('missing_skills', []),
+        'total_skills_count': len(submission.skills_match_details.get('matched_skills', [])) + len(submission.skills_match_details.get('missing_skills', [])),
         'skills_similarity': submission.skills_match_details.get('cosine_similarity', 0.0),
         'skills_keyword_percentage': submission.skills_match_details.get('keyword_percentage', 0.0),
         

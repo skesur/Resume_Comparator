@@ -261,7 +261,7 @@ h1, h2, h3, h4, h5, h6, .cyber-logo {
     border: 1px solid var(--neon-red);
 }
 
-/* Detail badges inside accordions */
+/* Detail badges inside accordions & headers */
 .bg-success-subtle {
     background-color: rgba(57, 255, 20, 0.08) !important;
     color: var(--neon-green) !important;
@@ -272,6 +272,29 @@ h1, h2, h3, h4, h5, h6, .cyber-logo {
     background-color: rgba(255, 49, 49, 0.08) !important;
     color: var(--neon-red) !important;
     border: 1px solid rgba(255, 49, 49, 0.4) !important;
+}
+
+.bg-secondary-subtle {
+    background-color: rgba(18, 22, 38, 0.85) !important;
+    color: #e2e8f0 !important;
+    border: 1px solid rgba(148, 163, 184, 0.35) !important;
+}
+
+/* Subtitle and Muted Text Legibility */
+.text-muted,
+.text-secondary,
+small.text-muted,
+p.text-muted,
+span.text-muted,
+.text-light-50 {
+    color: #94a3b8 !important; /* Soft, readable silver-slate (Slate 400) */
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.list-group-item small.text-muted {
+    color: #94a3b8 !important;
+    font-size: 0.92rem;
 }
 
 /* Custom Accordion for Cyberpunk */
